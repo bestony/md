@@ -48,6 +48,33 @@ export const fontSizeOptions: IConfigOption[] = [
 
 export const colorOptions: IConfigOption[] = [
   {
+    label: `Rails 红`,
+    value: `#d30001`,
+    desc: `Ruby On Rails 主题色`,
+  },
+  {
+    label: `Python 蓝`,
+    value: `#3d648e`,
+    desc: `Python 主题色`,
+  },
+  {
+    label: `Golang 蓝`,
+    value: `#8fd2f9`,
+    desc: `Golang 主题色`,
+  },
+
+  {
+    label: `Vue 绿`,
+    value: `#299f69`,
+    desc: `Vue 主题色`,
+  },
+
+  {
+    label: `保险大全红`,
+    value: `#D31145`,
+    desc: `保险大全`,
+  },
+  {
     label: `经典蓝`,
     value: `#0F4C81`,
     desc: `稳重冷静`,
