@@ -53,6 +53,11 @@ export const colorOptions: IConfigOption[] = [
     desc: `Ruby On Rails 主题色`,
   },
   {
+    label: `Zig 黄`,
+    value: `#fcdba5`,
+    desc: `Zig Lang 主题色`,
+  },
+  {
     label: `Python 蓝`,
     value: `#3d648e`,
     desc: `Python 主题色`,
