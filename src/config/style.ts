@@ -20,33 +20,28 @@ export const fontFamilyOptions: IConfigOption[] = [
 
 export const fontSizeOptions: IConfigOption[] = [
   {
-    label: `12px`,
-    value: `12px`,
-    desc: `更小`,
-  },
-  {
-    label: `13px`,
-    value: `13px`,
-    desc: `稍小`,
-  },
-  {
     label: `14px`,
     value: `14px`,
-    desc: `推荐`,
-  },
-  {
-    label: `15px`,
-    value: `15px`,
-    desc: `稍大`,
+    desc: `稍小`,
   },
   {
     label: `16px`,
     value: `16px`,
-    desc: `更大`,
+    desc: `推荐`,
+  },
+  {
+    label: `18px`,
+    value: `18px`,
+    desc: `稍大`,
   },
 ]
 
 export const colorOptions: IConfigOption[] = [
+  {
+    label: `保险大全红`,
+    value: `#D31145FF`,
+    desc: `热情奔放`,
+  },
   {
     label: `经典蓝`,
     value: `#0F4C81`,
@@ -67,21 +62,13 @@ export const colorOptions: IConfigOption[] = [
     value: `#FECE00`,
     desc: `明亮温暖`,
   },
-  {
-    label: `薰衣紫`,
-    value: `#92617E`,
-    desc: `优雅神秘`,
-  },
+
   {
     label: `天空蓝`,
     value: `#55C9EA`,
     desc: `清爽自由`,
   },
-  {
-    label: `玫瑰金`,
-    value: `#B76E79`,
-    desc: `奢华现代`,
-  },
+
   {
     label: `橄榄绿`,
     value: `#556B2F`,
@@ -97,11 +84,7 @@ export const colorOptions: IConfigOption[] = [
     value: `#A9A9A9`,
     desc: `柔和低调`,
   },
-  {
-    label: `樱花粉`,
-    value: `#FFB7C5`,
-    desc: `浪漫甜美`,
-  },
+
 ]
 
 const codeBlockUrlPrefix = `https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/`
