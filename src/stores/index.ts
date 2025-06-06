@@ -15,20 +15,18 @@ import {
 } from '@/config'
 import {
   addPrefix,
-  css2json,
-  customCssWithTemplate,
-  customizeTheme,
   downloadMD,
   exportHTML,
   formatDoc,
   sanitizeTitle,
 } from '@/utils'
-import { copyPlain } from '@/utils/clipboard'
 
+import { css2json, customCssWithTemplate, customizeTheme, modifyHtmlContent } from '@/utils/'
+import { copyPlain } from '@/utils/clipboard'
 import { initRenderer } from '@/utils/renderer'
 import CodeMirror from 'codemirror'
-import DOMPurify from 'dompurify'
 import { toPng } from 'html-to-image'
+
 import { marked } from 'marked'
 import { v4 as uuid } from 'uuid'
 
@@ -45,6 +43,10 @@ interface Post {
   }[]
   createDatetime: Date
   updateDatetime: Date
+  // 父标签
+  parentId?: string | null
+  // 展开状态
+  collapsed?: boolean
 }
 
 export const useStore = defineStore(`store`, () => {
@@ -53,7 +55,7 @@ export const useStore = defineStore(`store`, () => {
   const toggleDark = useToggle(isDark)
 
   // 是否开启 Mac 代码块
-  const isMacCodeBlock = useStorage(`isMacCodeBlock`, true)
+  const isMacCodeBlock = useStorage<boolean>(`isMacCodeBlock`, true)
   const toggleMacCodeBlock = useToggle(isMacCodeBlock)
 
   // 是否在左侧编辑
@@ -69,7 +71,7 @@ export const useStore = defineStore(`store`, () => {
   const toggleAIToolbox = useToggle(showAIToolbox)
 
   // 是否统计字数和阅读时间
-  const isCountStatus = useStorage(`isCountStatus`, false)
+  const isCountStatus = useStorage<boolean>(`isCountStatus`, false)
   const toggleCountStatus = useToggle(isCountStatus)
 
   // 是否开启段落首行缩进
@@ -175,7 +177,7 @@ export const useStore = defineStore(`store`, () => {
   /********************************
    * CRUD
    ********************************/
-  const addPost = (title: string) => {
+  const addPost = (title: string, parentId: string | null = null) => {
     const newPost: Post = {
       id: uuid(),
       title,
@@ -185,6 +187,7 @@ export const useStore = defineStore(`store`, () => {
       ],
       createDatetime: new Date(),
       updateDatetime: new Date(),
+      parentId,
     }
     posts.value.push(newPost)
     currentPostId.value = newPost.id
@@ -202,6 +205,28 @@ export const useStore = defineStore(`store`, () => {
       return
     posts.value.splice(idx, 1)
     currentPostId.value = posts.value[Math.min(idx, posts.value.length - 1)]?.id ?? ``
+  }
+
+  const updatePostParentId = (postId: string, parentId: string | null) => {
+    const post = getPostById(postId)
+    if (post) {
+      post.parentId = parentId
+      post.updateDatetime = new Date()
+    }
+  }
+
+  // 收起所有文章
+  const collapseAllPosts = () => {
+    posts.value.forEach((post) => {
+      post.collapsed = true
+    })
+  }
+
+  // 展开所有文章
+  const expandAllPosts = () => {
+    posts.value.forEach((post) => {
+      post.collapsed = false
+    })
   }
 
   /********************************
@@ -315,6 +340,7 @@ export const useStore = defineStore(`store`, () => {
     fonts: fontFamily.value,
     size: fontSize.value,
     isUseIndent: isUseIndent.value,
+    isMacCodeBlock: isMacCodeBlock.value,
   })
 
   const readingTime = ref<ReadTimeResults | null>(null)
@@ -334,6 +360,7 @@ export const useStore = defineStore(`store`, () => {
       legend: legend.value,
       isUseIndent: isUseIndent.value,
       countStatus: isCountStatus.value,
+      isMacCodeBlock: isMacCodeBlock.value,
     })
 
     const {
@@ -359,53 +386,8 @@ export const useStore = defineStore(`store`, () => {
       })
       i++
     }
-
     outputTemp = div.innerHTML
-
-    outputTemp = DOMPurify.sanitize(outputTemp, {
-      ADD_TAGS: [`mp-common-profile`],
-    })
-
-    // 阅读时间及字数统计
-    outputTemp = renderer.buildReadingTime(readingTimeResult) + outputTemp
-
-    // 去除第一行的 margin-top
-    outputTemp = outputTemp.replace(/(style=".*?)"/, `$1;margin-top: 0"`)
-    // 引用脚注
-    outputTemp += renderer.buildFootnotes()
-    // 附加的一些 style
-    outputTemp += renderer.buildAddition()
-
-    if (isMacCodeBlock.value) {
-      outputTemp += `
-        <style>
-          .hljs.code__pre > .mac-sign {
-            display: flex;
-          }
-        </style>
-      `
-    }
-
-    outputTemp += `
-      <style>
-        .code__pre {
-          padding: 0 !important;
-        }
-
-        .hljs.code__pre code {
-          display: -webkit-box;
-          padding: 0.5em 1em 1em;
-          overflow-x: auto;
-          text-indent: 0;
-        }
-
-        h2 strong {
-          color: inherit !important;
-        }
-      </style>
-    `
-
-    output.value = renderer.createContainer(outputTemp)
+    output.value = modifyHtmlContent(outputTemp, renderer)
   }
 
   // 更新 CSS
@@ -602,7 +584,7 @@ export const useStore = defineStore(`store`, () => {
   }
 
   // 下载卡片
-  const dowloadAsCardImage = () => {
+  const downloadAsCardImage = () => {
     const el = document.querySelector(`#output-wrapper>.preview`)! as HTMLElement
     toPng(el, {
       backgroundColor: isDark.value ? `` : `#fff`,
@@ -730,7 +712,7 @@ export const useStore = defineStore(`store`, () => {
     formatContent,
     exportEditorContent2HTML,
     exportEditorContent2MD,
-    dowloadAsCardImage,
+    downloadAsCardImage,
 
     importMarkdownContent,
     importDefaultContent,
@@ -761,6 +743,9 @@ export const useStore = defineStore(`store`, () => {
 
     titleList,
     isMobile,
+    updatePostParentId,
+    collapseAllPosts,
+    expandAllPosts,
   }
 })
 

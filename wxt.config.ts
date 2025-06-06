@@ -3,14 +3,13 @@ import ViteConfig from './vite.config'
 
 export default defineConfig({
   srcDir: `src`,
-  publicDir: `../public`,
-  extensionApi: `chrome`,
-  manifest: ({ mode }) => ({
+  modulesDir: `src/modules`,
+  manifest: ({ mode, browser }) => ({
     name: `公众号内容编辑器`,
     icons: {
       256: mode === `development` ? `/mpmd/icon-256-gray.png` : `/mpmd/icon-256.png`,
     },
-    permissions: [`storage`],
+    permissions: [`storage`, `tabs`, `activeTab`, `sidePanel`, `contextMenus`],
     host_permissions: [
       `https://*.github.com/*`,
       `https://*.githubusercontent.com/*`,
@@ -21,10 +20,32 @@ export default defineConfig({
     ],
     web_accessible_resources: [
       {
-        resources: [`*.png`, `*.svg`],
+        resources: [`*.png`, `*.svg`, `injected.js`],
         matches: [`<all_urls>`],
       },
     ],
+    side_panel: browser === `chrome`
+      ? {
+          default_path: `sidepanel.html`,
+        }
+      : undefined,
+    sidebar_action: browser === `firefox`
+      ? {
+          default_panel: `sidepanel.html`,
+          default_icon: {
+            256: `mpmd/icon-256.png`,
+          },
+          default_title: `MD 公众号编辑器`,
+        }
+      : undefined,
+    commands: {
+      _execute_sidebar_action: {
+        description: `Open MD Editor Side Panel`,
+        suggested_key: {
+          default: `Ctrl+Shift+Y`,
+        },
+      },
+    },
   }),
   analysis: {
     open: true,
