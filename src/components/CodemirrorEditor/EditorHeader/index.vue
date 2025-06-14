@@ -125,7 +125,11 @@ function copy() {
           ? `已复制 HTML 源码，请进行下一步操作。`
           : `已复制渲染后的内容到剪贴板，可直接到公众号后台粘贴。`,
       )
-
+      window.dispatchEvent(new CustomEvent(`copyToMp`, {
+        detail: {
+          content: output.value,
+        },
+      }))
       editorRefresh()
       emit(`endCopy`)
     })
@@ -189,7 +193,7 @@ function copy() {
       </Button>
 
       <!-- 复制按钮组 -->
-      <div class="space-x-1 bg-background text-background-foreground mx-2 flex items-center border rounded-md">
+      <div class="bg-background space-x-1 text-background-foreground mx-2 flex items-center border rounded-md">
         <Button variant="ghost" class="shadow-none" @click="copy">
           复制
         </Button>

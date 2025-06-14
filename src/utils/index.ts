@@ -1,13 +1,18 @@
 import type { Block, ExtendedProperties, Inline, Theme } from '@/types'
 
+import type { RendererAPI } from '@/types/renderer-types'
 import type { PropertiesHyphen } from 'csstype'
-import { prefix } from '@/config'
-import { autoSpace } from '@/utils/autoSpace'
+import type { ReadTimeResults } from 'reading-time'
+import { prefix } from '@/config/prefix'
+import { addSpacingToMarkdown } from '@/utils/autoSpace'
+import DOMPurify from 'isomorphic-dompurify'
 import juice from 'juice'
+import { marked } from 'marked'
 import * as prettierPluginBabel from 'prettier/plugins/babel'
 import * as prettierPluginEstree from 'prettier/plugins/estree'
 import * as prettierPluginMarkdown from 'prettier/plugins/markdown'
 import * as prettierPluginCss from 'prettier/plugins/postcss'
+
 import { format } from 'prettier/standalone'
 
 export function addPrefix(str: string) {
@@ -155,7 +160,7 @@ export async function formatDoc(content: string, type: `markdown` | `css` = `mar
     markdown: [prettierPluginMarkdown, prettierPluginBabel, prettierPluginEstree],
     css: [prettierPluginCss],
   }
-  const addSpaceContent = autoSpace(content)
+  const addSpaceContent = await addSpacingToMarkdown(content)
 
   const parser = type in plugins ? type : `markdown`
   return await format(addSpaceContent, {
@@ -454,4 +459,71 @@ export function processClipboardContent(primaryColor: string) {
     grand.innerHTML = ``
     grand.appendChild(section)
   })
+}
+
+export function renderMarkdown(raw: string, renderer: RendererAPI) {
+  // 解析 front-matter 和正文
+  const { markdownContent, readingTime }
+    = renderer.parseFrontMatterAndContent(raw)
+
+  // marked -> html
+  let html = marked.parse(markdownContent) as string
+
+  // XSS 处理
+  html = DOMPurify.sanitize(html, { ADD_TAGS: [`mp-common-profile`] })
+
+  return { html, readingTime }
+}
+
+export function postProcessHtml(baseHtml: string, reading: ReadTimeResults, renderer: RendererAPI): string {
+  // 阅读时间及字数统计
+  let html = baseHtml
+  html = renderer.buildReadingTime(reading) + html
+  // 去除第一行的 margin-top
+  html = html.replace(/(style=".*?)"/, `$1;margin-top: 0"`)
+  // 引用脚注
+  html += renderer.buildFootnotes()
+  // 附加的一些 style
+  html += renderer.buildAddition()
+  if (renderer.getOpts().isMacCodeBlock) {
+    html += `
+        <style>
+          .hljs.code__pre > .mac-sign {
+            display: flex;
+          }
+        </style>
+      `
+  }
+  html += `
+      <style>
+        .code__pre {
+          padding: 0 !important;
+        }
+  
+        .hljs.code__pre code {
+          display: -webkit-box;
+          padding: 0.5em 1em 1em;
+          overflow-x: auto;
+          text-indent: 0;
+        }
+        h2 strong {
+          color: inherit !important;
+        }
+      </style>
+    `
+  // 包裹 HTML
+  return renderer.createContainer(html)
+}
+
+export function modifyHtmlContent(content: string, renderer: RendererAPI): string {
+  const {
+    markdownContent,
+    readingTime: readingTimeResult,
+  } = renderer.parseFrontMatterAndContent(content)
+
+  let html = marked.parse(markdownContent) as string
+  html = DOMPurify.sanitize(html, {
+    ADD_TAGS: [`mp-common-profile`],
+  })
+  return postProcessHtml(html, readingTimeResult, renderer)
 }
